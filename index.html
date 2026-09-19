@@ -155,6 +155,83 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .event .nm{font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .event .meta{font-size:11px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+
+/* ---------- day timeline ---------- */
+.day-head{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 16px;border-bottom:1px solid var(--rule);
+  position:sticky;top:0;background:var(--paper);z-index:10;
+}
+.day-head-main{min-width:0;flex:1}
+.day-head-title{font-size:17px;font-weight:600;line-height:1.25}
+.day-head-sub{font-size:12px;color:var(--ink-2);margin-top:2px}
+.day-head-badge{
+  flex:none;padding:5px 8px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);
+  font-size:11px;font-weight:600;
+}
+.day-timeline{
+  display:grid;grid-template-columns:58px minmax(0,1fr);
+  position:relative;min-height:768px;
+}
+.day-gutter{position:relative;border-right:1px solid var(--rule)}
+.day-hour{
+  position:absolute;left:0;right:8px;text-align:right;
+  transform:translateY(-6px);font-size:11px;color:var(--ink-3);
+}
+.day-track{
+  position:relative;min-width:0;
+  background-image:repeating-linear-gradient(to bottom,
+    var(--rule) 0,var(--rule) 1px,transparent 1px,transparent var(--day-hour-px));
+}
+.day-track.off{background-color:var(--sunk)}
+.day-event{
+  position:absolute;text-align:left;
+  border-left:4px solid var(--evc,var(--accent));
+  background:var(--paper);border-radius:8px;padding:8px 10px;
+  min-width:0;overflow:hidden;
+  box-shadow:0 1px 0 var(--rule),0 2px 8px rgba(20,22,28,.06);
+}
+.day-event:hover{box-shadow:0 0 0 1px var(--evc,var(--accent)),var(--shadow);z-index:5}
+.day-event .nm{
+  font-size:14px;font-weight:600;line-height:1.2;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.day-event .meta{
+  margin-top:3px;font-size:11.5px;color:var(--ink-2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.day-event .time{
+  margin-top:5px;font-size:11px;color:var(--ink-3);
+}
+.day-now{
+  position:absolute;left:0;right:0;height:0;
+  border-top:2px solid #e0503f;z-index:8;pointer-events:none;
+}
+.day-now::before{
+  content:"";position:absolute;left:-4px;top:-5px;
+  width:8px;height:8px;border-radius:50%;background:#e0503f;
+}
+.day-now-label{
+  position:absolute;left:-58px;top:-11px;width:50px;
+  text-align:right;font-size:11px;font-weight:600;color:#e0503f;
+}
+.day-empty{
+  position:absolute;left:12px;right:12px;top:18px;
+  color:var(--ink-3);font-size:13px;
+}
+@media (max-width:760px){
+  .day-head{padding:12px 14px}
+  .day-head-title{font-size:16px}
+  .day-timeline{grid-template-columns:52px minmax(0,1fr);min-height:780px}
+  .day-hour{right:7px;font-size:10.5px}
+  .day-event{padding:7px 8px}
+  .day-event .nm{font-size:13px}
+  .day-event .meta{font-size:11px}
+  .day-event .time{font-size:10.5px}
+  .day-now-label{left:-52px;width:45px;font-size:10.5px}
+}
+
 /* ---------- agenda (mobile) ---------- */
 .agenda{padding:4px 16px 40px}
 .aday{border-bottom:1px solid var(--rule);padding:12px 0}
@@ -223,6 +300,7 @@ input[type=file]{font-size:13px}
   <span class="period" id="period"></span>
   <span class="spacer"></span>
   <span class="seg">
+    <button id="tabDay" aria-pressed="false">День</button>
     <button id="tabWeek" aria-pressed="false">Неделя</button>
     <button id="tabMonth" aria-pressed="true">Месяц</button>
   </span>
@@ -335,7 +413,7 @@ const SAMPLE = {
 
 /* ====================== состояние ====================== */
 let data = null;
-let mode = "month";                 // "month" | "week"
+let mode = window.innerWidth < 760 ? "day" : "month"; // "day" | "week" | "month"
 let cursor = startOfDay(new Date());
 
 
@@ -452,20 +530,24 @@ function withinRange(l, date){
 /* ====================== отрисовка ====================== */
 function render(){
   const narrow = window.innerWidth < 760;
-  $("#tabMonth").setAttribute("aria-pressed", String(mode === "month"));
+  $("#tabDay").setAttribute("aria-pressed", String(mode === "day"));
   $("#tabWeek").setAttribute("aria-pressed", String(mode === "week"));
+  $("#tabMonth").setAttribute("aria-pressed", String(mode === "month"));
   $("#ownerLine").textContent = data && data.owner ? data.owner : "";
 
   if (mode === "month"){
     $("#period").textContent = MONTHS[cursor.getMonth()] + " " + cursor.getFullYear();
-  } else {
+  } else if (mode === "week") {
     $("#period").textContent = weekLabel(cursor);
+  } else {
+    $("#period").textContent = dayLabel(cursor);
   }
 
   if (!data){ view.innerHTML = '<p class="hint">Расписание пока пустое. Нажми <b>Данные</b> и вставь JSON — или загляни в пример, чтобы увидеть формат.</p>'; return; }
 
   view.innerHTML = "";
-  if (narrow) renderAgenda();
+  if (mode === "day") renderDay();
+  else if (narrow) renderAgenda();
   else if (mode === "month") renderMonth();
   else renderWeek();
 }
@@ -478,6 +560,9 @@ function weekLabel(d){
   const left  = mo.getDate() + " " + MONTHS_GEN[mo.getMonth()] + (y ? " " + mo.getFullYear() : "");
   const right = su.getDate() + " " + MONTHS_GEN[su.getMonth()] + (y ? " " + su.getFullYear() : "");
   return left + " – " + right;
+}
+function dayLabel(d){
+  return d.getDate() + " " + MONTHS_GEN[d.getMonth()] + " " + d.getFullYear();
 }
 
 function el(tag, cls, text){
@@ -577,6 +662,96 @@ function layoutDay(list){
   return placed.map(p => Object.assign(p, { total }));
 }
 
+
+function dayTimelineBounds(date){
+  const list = lessonsOn(date);
+  let min = 8 * 60, max = 20 * 60;
+
+  if (list.length){
+    const starts = list.map(l => timeToMinutes(l.t1)).filter(v => v != null);
+    const ends = list.map(l => timeToMinutes(l.t2)).filter(v => v != null);
+    if (starts.length) min = Math.min(min, Math.floor(Math.min(...starts) / 60) * 60);
+    if (ends.length) max = Math.max(max, Math.ceil(Math.max(...ends) / 60) * 60);
+  }
+
+  // Немного воздуха сверху/снизу, но не превращаем телефонный экран в бесконечную простыню.
+  min = Math.max(6 * 60, min - 30);
+  max = Math.min(23 * 60, max + 60);
+  return {min, max};
+}
+
+function renderDay(){
+  const d = startOfDay(cursor);
+  const today = startOfDay(new Date());
+  const off = dayOff(d);
+  const list = lessonsOn(d);
+  const {min, max} = dayTimelineBounds(d);
+  const HOUR_PX = 72;
+  const pxPerMin = HOUR_PX / 60;
+  const totalH = (max - min) * pxPerMin;
+
+  const head = el("div","day-head");
+  const main = el("div","day-head-main");
+  main.appendChild(el("div","day-head-title",
+    d.getDate() + " " + MONTHS_GEN[d.getMonth()] + ", " + DOW_FULL[(d.getDay()+6)%7]));
+  const sub = parityName(parityOf(d));
+  main.appendChild(el("div","day-head-sub", sub + (off ? " · " + off.title : "")));
+  head.appendChild(main);
+  if (list.length) head.appendChild(el("span","day-head-badge", list.length + " " + (list.length === 1 ? "пара" : list.length < 5 ? "пары" : "пар")));
+  view.appendChild(head);
+
+  const body = el("div","day-timeline");
+  body.style.height = totalH + "px";
+
+  const gutter = el("div","day-gutter");
+  for (let m = min; m <= max; m += 60){
+    const lab = el("div","day-hour", String(Math.floor(m/60)).padStart(2,"0") + ":00");
+    lab.style.top = ((m-min)*pxPerMin) + "px";
+    gutter.appendChild(lab);
+  }
+  body.appendChild(gutter);
+
+  const track = el("div","day-track" + (off ? " off" : ""));
+  track.style.setProperty("--day-hour-px", HOUR_PX + "px");
+
+  if (!list.length){
+    track.appendChild(el("div","day-empty", off ? off.title : "В этот день занятий нет."));
+  }
+
+  layoutDay(list).forEach(({l,s,e,col:ci,total}) => {
+    const b = el("button","day-event");
+    b.style.setProperty("--evc", l.color);
+    b.style.top = Math.max(0, (s-min)*pxPerMin) + "px";
+    b.style.height = Math.max(46, (e-s)*pxPerMin - 3) + "px";
+
+    const gap = 6;
+    b.style.width = `calc(${100/total}% - ${(total-1)*gap/total}px)`;
+    b.style.left = `calc(${ci*100/total}% + ${ci*gap}px)`;
+
+    b.appendChild(el("div","nm",l.name));
+    const meta = [l.type, l.room, l.teacher].filter(Boolean).join(" · ");
+    if (meta) b.appendChild(el("div","meta",meta));
+    if (l.t1) b.appendChild(el("div","time",l.t1 + (l.t2 ? " – " + l.t2 : "")));
+    b.addEventListener("click", () => openEvent(l,d));
+    track.appendChild(b);
+  });
+
+  if (sameDay(d,today)){
+    const now = new Date();
+    const nowMin = now.getHours()*60 + now.getMinutes() + now.getSeconds()/60;
+    if (nowMin >= min && nowMin <= max){
+      const line = el("div","day-now");
+      line.style.top = ((nowMin-min)*pxPerMin) + "px";
+      line.appendChild(el("span","day-now-label",
+        String(now.getHours()).padStart(2,"0") + ":" + String(now.getMinutes()).padStart(2,"0")));
+      track.appendChild(line);
+    }
+  }
+
+  body.appendChild(track);
+  view.appendChild(body);
+}
+
 function renderWeek(){
   const mo = mondayOf(cursor);
   const today = startOfDay(new Date());
@@ -617,9 +792,9 @@ function renderWeek(){
       b.style.setProperty("--evc", l.color);
       b.style.top = Math.max(0, (s - min) * pxPerMin) + "px";
       b.style.height = Math.max(18, (e - s) * pxPerMin - 2) + "px";
-      const gap = 4, w = `calc((100% - ${(total-1)*gap}px)/${total})`;
-      b.style.width = w;
-      b.style.left = `calc(${ci} * (${w} + ${gap}px))`;
+      const gap = 4;
+      b.style.width = `calc(${100/total}% - ${(total-1)*gap/total}px)`;
+      b.style.left = `calc(${ci*100/total}% + ${ci*gap}px)`;
       b.appendChild(el("div","nm", l.name));
       const meta = [l.t1 && l.t2 ? l.t1 + "–" + l.t2 : l.t1, l.room].filter(Boolean).join(" · ");
       if (meta) b.appendChild(el("div","meta", meta));
@@ -749,15 +924,19 @@ $("#btnToday").addEventListener("click", () => { cursor = startOfDay(new Date())
 $("#btnPrev").addEventListener("click", () => { step(-1); });
 $("#btnNext").addEventListener("click", () => { step(1); });
 function step(n){
-  cursor = mode === "month"
-    ? new Date(cursor.getFullYear(), cursor.getMonth()+n, 1)
-    : addDays(cursor, 7*n);
+  if (mode === "month") cursor = new Date(cursor.getFullYear(), cursor.getMonth()+n, 1);
+  else if (mode === "week") cursor = addDays(cursor, 7*n);
+  else cursor = addDays(cursor, n);
   render();
 }
+$("#tabDay").addEventListener("click", () => { mode = "day"; render(); });
 $("#tabMonth").addEventListener("click", () => { mode = "month"; render(); });
 $("#tabWeek").addEventListener("click", () => { mode = "week"; render(); });
 document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", (e) => e.target.closest("dialog").close()));
 window.addEventListener("resize", debounce(render, 150));
+setInterval(() => {
+  if (!document.querySelector("dialog[open]") && (mode === "day" || mode === "week") && sameDay(cursor, new Date())) render();
+}, 60000);
 window.addEventListener("keydown", (e) => {
   if (document.querySelector("dialog[open]")) return;
   if (e.key === "ArrowLeft") step(-1);
