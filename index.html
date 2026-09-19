@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Расписание</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#ffffff;
+  --sunk:#f6f7f9;
+  --ink:#14161c;
+  --ink-2:#5b6272;
+  --ink-3:#8b93a3;
+  --rule:#e4e7ee;
+  --rule-strong:#ccd2de;
+  --accent:#2f56e0;
+  --accent-soft:#e8edfd;
+  --today:#2f56e0;
+  --shadow:0 10px 30px rgba(20,22,28,.10);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15171c;
+    --sunk:#1b1e25;
+    --ink:#e9ecf2;
+    --ink-2:#a7afbf;
+    --ink-3:#7b8395;
+    --rule:#282c35;
+    --rule-strong:#39404d;
+    --accent:#7d9bff;
+    --accent-soft:#1f2740;
+    --today:#7d9bff;
+    --shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15171c; --sunk:#1b1e25; --ink:#e9ecf2; --ink-2:#a7afbf; --ink-3:#7b8395;
+  --rule:#282c35; --rule-strong:#39404d; --accent:#7d9bff; --accent-soft:#1f2740;
+  --today:#7d9bff; --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums;
+}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* ---------- header ---------- */
+.top{
+  display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
+  padding:18px 20px 12px;border-bottom:1px solid var(--rule);
+}
+.brand{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:0}
+.brand-sub{color:var(--ink-3);font-size:13px}
+.top .spacer{flex:1}
+
+.bar{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:10px 20px;border-bottom:1px solid var(--rule);
+  position:sticky;top:env(safe-area-inset-top,0px);background:var(--paper);z-index:20;
+}
+.btn{
+  padding:6px 12px;border:1px solid var(--rule-strong);border-radius:7px;
+  color:var(--ink-2);background:var(--paper);
+}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.nav{display:flex;gap:4px}
+.nav .btn{padding:6px 9px;line-height:1}
+.period{font-weight:600;font-size:15px;margin-left:6px;min-width:150px}
+.seg{display:flex;border:1px solid var(--rule-strong);border-radius:7px;overflow:hidden}
+.seg button{padding:6px 14px;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+
+/* ---------- month grid ---------- */
+.grid{display:grid;grid-template-columns:34px repeat(7,minmax(0,1fr))}
+.head{border-bottom:1px solid var(--rule);color:var(--ink-2);font-weight:500}
+.head > div{padding:9px 10px}
+.rail{
+  border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:center;
+}
+.rail span{
+  writing-mode:vertical-rl;transform:rotate(180deg);
+  font-size:11px;color:var(--ink-3);letter-spacing:.02em;
+}
+.cell{
+  border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  min-height:112px;padding:6px 6px 8px;min-width:0;
+}
+.cell.dim{background:var(--sunk)}
+.cell.off,.wcell.off{background:var(--sunk)}
+.cell.off .daynum{color:var(--ink-3)}
+.offlabel{font-size:11px;color:var(--ink-3);padding:1px 4px 0;line-height:1.3}
+.dayoff{font-size:11px;font-weight:400;color:var(--ink-3);margin-top:1px}
+.daynum{font-size:13px;color:var(--ink-2);margin-bottom:4px;display:inline-block;padding:1px 6px;border-radius:999px}
+.cell.dim .daynum{color:var(--ink-3)}
+.cell.today .daynum{background:var(--today);color:#fff;font-weight:600}
+.ev{
+  display:flex;gap:6px;align-items:baseline;width:100%;text-align:left;
+  padding:2px 4px 2px 0;border-radius:4px;position:relative;
+}
+.ev:hover{background:var(--sunk)}
+.ev i{width:3px;align-self:stretch;border-radius:2px;background:var(--evc,var(--accent));flex:none;min-height:14px}
+.ev .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
+.ev .tm{color:var(--ink-3);font-size:11.5px;flex:none}
+
+/* ---------- week grid: пропорциональная временная сетка ---------- */
+.tgrid-head{
+  display:grid;grid-template-columns:56px repeat(7,minmax(0,1fr));
+  border-bottom:1px solid var(--rule);background:var(--paper);
+}
+.tgrid-corner{padding:8px 6px;font-size:11px;color:var(--ink-3)}
+.tgrid-day{padding:8px 10px;min-width:0}
+.tgrid-day .dname{font-size:13px}
+.tgrid-day.today .dname{color:var(--today);font-weight:600}
+.tgrid-day .dayoff{font-size:11px;color:var(--ink-3);font-weight:400;margin-top:1px}
+
+.tgrid-body{
+  display:grid;grid-template-columns:56px repeat(7,minmax(0,1fr));position:relative;
+}
+.tgrid-gutter{position:relative}
+.tgrid-hour{
+  position:absolute;left:0;right:6px;text-align:right;
+  font-size:11px;color:var(--ink-3);transform:translateY(-6px);
+}
+.tgrid-col{
+  position:relative;border-right:1px solid var(--rule);min-width:0;
+  background-image:repeating-linear-gradient(to bottom,
+    var(--rule) 0, var(--rule) 1px, transparent 1px, transparent var(--hour-px));
+}
+.tgrid-col.off{background-color:var(--sunk)}
+.tgrid-col.today{background-color:var(--accent-soft)}
+.tgrid-now{
+  position:absolute;left:0;right:0;height:0;border-top:2px solid #e0503f;z-index:6;pointer-events:none;
+}
+.tgrid-now::before{
+  content:"";position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:#e0503f;
+}
+.event{
+  position:absolute;text-align:left;border-left:3px solid var(--evc,var(--accent));
+  background:var(--sunk);border-radius:5px;padding:4px 7px;min-width:0;overflow:hidden;
+  box-shadow:0 0 0 1px var(--paper);
+}
+.event:hover{box-shadow:0 0 0 1px var(--paper),var(--shadow);z-index:4}
+.event .nm{font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.event .meta{font-size:11px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- agenda (mobile) ---------- */
+.agenda{padding:4px 16px 40px}
+.aday{border-bottom:1px solid var(--rule);padding:12px 0}
+.aday h3{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.aday h3 em{font-style:normal;color:var(--ink-3);font-weight:400}
+.aday.today h3{color:var(--today)}
+.arow{display:flex;gap:10px;width:100%;text-align:left;padding:7px 0;align-items:flex-start}
+.arow .t{width:46px;flex:none;font-size:12.5px;color:var(--ink-2)}
+.arow i{width:3px;align-self:stretch;border-radius:2px;background:var(--evc,var(--accent));flex:none}
+.arow .b{min-width:0}
+.arow .b .nm{font-size:14px}
+.arow .b .meta{font-size:12px;color:var(--ink-2)}
+.empty{color:var(--ink-3);font-size:13px;padding:6px 0}
+
+.wrap{overflow-x:auto}
+.hint{padding:26px 20px;color:var(--ink-2);max-width:62ch}
+.hint b{color:var(--ink)}
+
+/* ---------- dialogs ---------- */
+dialog{
+  border:0;border-radius:12px;padding:0;background:var(--paper);color:var(--ink);
+  box-shadow:var(--shadow);max-width:min(560px,92vw);width:100%;
+}
+dialog::backdrop{background:rgba(10,12,18,.45)}
+.dlg-h{display:flex;align-items:center;gap:10px;padding:16px 18px 10px;border-bottom:1px solid var(--rule)}
+.dlg-h h2{margin:0;font-size:16px;font-weight:600;flex:1}
+.dlg-b{padding:16px 18px}
+.dlg-f{padding:12px 18px 16px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;border-top:1px solid var(--rule)}
+.kv{display:grid;grid-template-columns:96px 1fr;gap:6px 12px;font-size:13.5px}
+.kv dt{color:var(--ink-3)}
+.kv dd{margin:0}
+textarea{
+  width:100%;min-height:210px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:12.5px;padding:10px;border:1px solid var(--rule-strong);border-radius:8px;
+  background:var(--sunk);color:var(--ink);resize:vertical;
+}
+input[type=file]{font-size:13px}
+.status{font-size:12.5px;color:var(--ink-3);margin-top:8px;min-height:1.2em}
+.status.bad{color:#d1443c}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{opacity:.9;color:#fff}
+
+@media (max-width:760px){
+  .brand{font-size:21px}
+  .top,.bar{padding-left:14px;padding-right:14px}
+  .period{min-width:auto}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1 class="brand">Расписание</h1>
+  <span class="brand-sub" id="ownerLine"></span>
+  <span class="spacer"></span>
+  <button class="btn" id="btnData">Данные</button>
+</header>
+
+<div class="bar">
+  <button class="btn" id="btnToday">Сегодня</button>
+  <span class="nav">
+    <button class="btn" id="btnPrev" aria-label="Назад">‹</button>
+    <button class="btn" id="btnNext" aria-label="Вперёд">›</button>
+  </span>
+  <span class="period" id="period"></span>
+  <span class="spacer"></span>
+  <span class="seg">
+    <button id="tabWeek" aria-pressed="false">Неделя</button>
+    <button id="tabMonth" aria-pressed="true">Месяц</button>
+  </span>
+</div>
+
+<main id="view" class="wrap"></main>
+
+<dialog id="dlgEvent">
+  <div class="dlg-h"><h2 id="evTitle">Занятие</h2></div>
+  <div class="dlg-b"><dl class="kv" id="evBody"></dl></div>
+  <div class="dlg-f"><button class="btn" data-close>Закрыть</button></div>
+</dialog>
+
+<dialog id="dlgData">
+  <div class="dlg-h"><h2>Источник расписания</h2></div>
+  <div class="dlg-b">
+    <p style="margin:0 0 10px;color:var(--ink-2)">
+      Страница читает файл <b>schedule.json</b>, лежащий рядом с ней. Здесь можно
+      посмотреть его, поправить для себя или скачать готовый файл, чтобы закоммитить его в репозиторий.
+    </p>
+    <textarea id="jsonBox" spellcheck="false" aria-label="JSON расписания"></textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
+      <input type="file" id="fileIn" accept=".json,application/json">
+      <button class="btn" id="btnSample">Вставить пример</button>
+      <button class="btn" id="btnReload">Взять с сервера</button>
+      <button class="btn" id="btnDownload">Скачать .json</button>
+    </div>
+    <p class="status" id="dataStatus"></p>
+  </div>
+  <div class="dlg-f">
+    <button class="btn" data-close>Отмена</button>
+    <button class="btn primary" id="btnSave">Сохранить</button>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+
+/* ====================== модель данных ======================
+{
+  "owner": "Руслан Рахимов",
+  "semesterStart": "2026-09-01",      // начало семестра (и якорь чётности)
+  "semesterEnd": "2026-12-27",        // конец семестра; вне этих границ пар нет
+  "firstWeekParity": "even",          // чётность первой недели: "even" | "odd"
+  "holidays": [                       // выходные: дата, {date,title} или {from,to,title}
+    "2026-11-04",
+    { "from": "2026-10-26", "to": "2026-11-01", "title": "Каникулы" }
+  ],
+  "subjects": { "phys": {"name":"Физика","color":"#3b82f6"} },
+  "lessons": [
+    { "subject":"phys", "weekday":1, "slot":2, "parity":"any",
+      "type":"Лекция", "room":"Ауд. 285", "teacher":"Иванов И.И." }
+  ],
+  "overrides": [
+    { "date":"2026-09-16", "cancel":true, "subject":"phys" },
+    { "date":"2026-09-16", "add":{ "subject":"phys","slot":4,"room":"Ауд. 101" } }
+  ]
+}
+weekday: 1=Пн … 7=Вс. slot: номер пары 1..N по массиву SLOTS (или "time":"09:50" + "end":"11:20" для нестандартного времени).
+============================================================ */
+
+const SLOTS = [
+  ["08:30","10:05"],["10:15","11:50"],["12:00","13:35"],["14:15","15:50"], ["11:20", "13:00"]
+];
+const DOW = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+const DOW_FULL = ["понедельник","вторник","среда","четверг","пятница","суббота","воскресенье"];
+const MONTHS = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+const MONTHS_GEN = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const PALETTE = ["#3b82f6","#f59e0b","#22c55e","#a855f7","#ef4444","#06b6d4","#ec4899","#64748b"];
+
+const SAMPLE = {
+  owner: "Руслан Рахимов",
+  semesterStart: "2026-09-01",
+  semesterEnd: "2026-12-27",
+  firstWeekParity: "even",
+  holidays: [
+    "2026-11-04",
+    { date: "2026-10-05", title: "День учителя" },
+    { from: "2026-10-26", to: "2026-11-01", title: "Каникулы" }
+  ],
+  subjects: {
+    phys:  { name: "Физика", color: "#a855f7" },
+    prob:  { name: "Теория вероятностей", color: "#3b82f6" },
+    elec:  { name: "Электроника", color: "#06b6d4" },
+    eng:   { name: "English B1.2", color: "#f59e0b" },
+    sport: { name: "Спортивный тренинг", color: "#22c55e" },
+    speak: { name: "Техники публичных выступлений", color: "#f59e0b" }
+  },
+  lessons: [
+    { subject:"prob",  weekday:1, slot:2, parity:"any",  type:"Лекция",     room:"Ауд. 285", teacher:"Смирнова А. В." },
+    { subject:"prob",  weekday:1, slot:3, parity:"any",  type:"Практика",   room:"Ауд. 285", teacher:"Смирнова А. В." },
+    { subject:"sport", weekday:1, slot:5, parity:"any",  type:"Практика",   room:"Спортзал" },
+    { subject:"elec",  weekday:3, slot:1, parity:"any",  type:"Лабораторная", room:"Ауд. 412", teacher:"Петров К. Н." },
+    { subject:"elec",  weekday:3, slot:2, parity:"any",  type:"Лабораторная", room:"Ауд. 412", teacher:"Петров К. Н." },
+    { subject:"phys",  weekday:3, slot:6, parity:"any",  type:"Лекция",     room:"Ауд. 101" },
+    { subject:"phys",  weekday:4, slot:2, parity:"any",  type:"Лекция",     room:"Ауд. 101", teacher:"Кузнецов Д. С." },
+    { subject:"sport", weekday:4, slot:5, parity:"any",  type:"Практика",   room:"Спортзал" },
+    { subject:"phys",  weekday:5, slot:2, parity:"any",  type:"Практика",   room:"Ауд. 208" },
+    { subject:"phys",  weekday:5, slot:3, parity:"even", type:"Практика",   room:"Ауд. 208" },
+    { subject:"phys",  weekday:5, slot:4, parity:"any",  type:"Практика",   room:"Ауд. 208" },
+    { subject:"speak", weekday:6, slot:3, parity:"even", type:"Практика",   room:"Ауд. 330" },
+    { subject:"speak", weekday:6, slot:4, parity:"even", type:"Практика",   room:"Ауд. 330" },
+    { subject:"eng",   weekday:6, slot:5, parity:"any",  type:"Практика",   room:"Ауд. 214", teacher:"Орлова Е. П." },
+    { subject:"eng",   weekday:6, slot:6, parity:"any",  type:"Практика",   room:"Ауд. 214", teacher:"Орлова Е. П." }
+  ],
+  overrides: [
+    { date:"2026-09-17", cancel:true, subject:"phys" }
+  ]
+};
+
+/* ====================== состояние ====================== */
+let data = null;
+let mode = "month";                 // "month" | "week"
+let cursor = startOfDay(new Date());
+
+
+const $ = (s) => document.querySelector(s);
+const view = $("#view");
+
+/* ====================== даты ====================== */
+function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+function addDays(d,n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function mondayOf(d){ const x = startOfDay(d); const wd = (x.getDay()+6)%7; return addDays(x,-wd); }
+function iso(d){
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function parseISO(s){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s||"").trim());
+  return m ? new Date(+m[1], +m[2]-1, +m[3]) : null;
+}
+function sameDay(a,b){ return iso(a)===iso(b); }
+
+function parityOf(date){
+  const start = parseISO(data && data.semesterStart) || new Date(date.getFullYear(), 8, 1);
+  const base = mondayOf(start);
+  const weeks = Math.floor((mondayOf(date) - base) / 604800000);
+  const first = (data && data.firstWeekParity) === "odd" ? 1 : 0;
+  const even = (((weeks % 2) + 2) % 2 + first) % 2 === 0;
+  return even ? "even" : "odd";
+}
+const parityName = (p) => p === "even" ? "Чётная" : "Нечётная";
+
+/* --- границы семестра и выходные --- */
+function inTerm(date){
+  const from = parseISO(data.termStart || data.semesterStart);
+  const to   = parseISO(data.termEnd   || data.semesterEnd);
+  if (from && date < from) return false;
+  if (to   && date > to)   return false;
+  return true;
+}
+
+function holidayOn(date){
+  const key = iso(date);
+  for (const h of (data.holidays || [])){
+    if (typeof h === "string"){
+      if (h === key) return { title: "Выходной" };
+      continue;
+    }
+    if (h.date === key) return { title: h.title || "Выходной" };
+    if (h.from && h.to){
+      const a = parseISO(h.from), b = parseISO(h.to);
+      if (a && b && date >= a && date <= b) return { title: h.title || "Каникулы" };
+    }
+  }
+  return null;
+}
+
+/* Нерабочий день: либо вне семестра, либо праздник/каникулы. */
+function dayOff(date){
+  if (!data) return null;
+  if (!inTerm(date)) return { title: "Вне семестра", outside: true };
+  return holidayOn(date);
+}
+
+/* ====================== выборка занятий ====================== */
+function subjectOf(key){
+  const s = (data.subjects || {})[key];
+  if (s) return s;
+  return { name: key || "Занятие", color: PALETTE[hash(key) % PALETTE.length] };
+}
+function hash(s){ let h=0; for (const ch of String(s)) h = (h*31 + ch.charCodeAt(0)) >>> 0; return h; }
+
+function timesOf(l){
+  if (l.time) return [l.time, l.end || ""];
+  const s = SLOTS[(l.slot|0) - 1];
+  return s ? [s[0], s[1]] : ["", ""];
+}
+
+function lessonsOn(date){
+  if (!data) return [];
+  const wd = (date.getDay()+6)%7 + 1;
+  const par = parityOf(date);
+  const key = iso(date);
+  const ovs = (data.overrides || []).filter(o => o.date === key);
+
+  // В выходной и за границами семестра регулярные пары не идут.
+  // Разовые занятия из overrides.add всё равно применяются — отработки бывают и в субботу.
+  let list = dayOff(date) ? [] : (data.lessons || []).filter(l =>
+    (l.weekday|0) === wd &&
+    (!l.parity || l.parity === "any" || l.parity === par) &&
+    withinRange(l, date)
+  );
+
+  for (const o of ovs){
+    if (o.cancel){
+      list = list.filter(l => !(
+        (!o.subject || l.subject === o.subject) &&
+        (!o.slot || (l.slot|0) === (o.slot|0))
+      ));
+    }
+    if (o.add) list = list.concat([Object.assign({}, o.add, { moved:true })]);
+  }
+
+  return list.map(l => {
+    const [t1,t2] = timesOf(l);
+    const s = subjectOf(l.subject);
+    return Object.assign({}, l, { name: l.name || s.name, color: l.color || s.color, t1, t2 });
+  }).sort((a,b) => (a.t1 || "").localeCompare(b.t1 || ""));
+}
+
+function withinRange(l, date){
+  if (l.from){ const f = parseISO(l.from); if (f && date < f) return false; }
+  if (l.to){ const t = parseISO(l.to); if (t && date > t) return false; }
+  return true;
+}
+
+/* ====================== отрисовка ====================== */
+function render(){
+  const narrow = window.innerWidth < 760;
+  $("#tabMonth").setAttribute("aria-pressed", String(mode === "month"));
+  $("#tabWeek").setAttribute("aria-pressed", String(mode === "week"));
+  $("#ownerLine").textContent = data && data.owner ? data.owner : "";
+
+  if (mode === "month"){
+    $("#period").textContent = MONTHS[cursor.getMonth()] + " " + cursor.getFullYear();
+  } else {
+    $("#period").textContent = weekLabel(cursor);
+  }
+
+  if (!data){ view.innerHTML = '<p class="hint">Расписание пока пустое. Нажми <b>Данные</b> и вставь JSON — или загляни в пример, чтобы увидеть формат.</p>'; return; }
+
+  view.innerHTML = "";
+  if (narrow) renderAgenda();
+  else if (mode === "month") renderMonth();
+  else renderWeek();
+}
+
+function weekLabel(d){
+  const mo = mondayOf(d), su = addDays(mo,6);
+  const y = mo.getFullYear() !== su.getFullYear();
+  if (mo.getMonth() === su.getMonth() && !y)
+    return mo.getDate() + " – " + su.getDate() + " " + MONTHS_GEN[su.getMonth()];
+  const left  = mo.getDate() + " " + MONTHS_GEN[mo.getMonth()] + (y ? " " + mo.getFullYear() : "");
+  const right = su.getDate() + " " + MONTHS_GEN[su.getMonth()] + (y ? " " + su.getFullYear() : "");
+  return left + " – " + right;
+}
+
+function el(tag, cls, text){
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+
+function renderMonth(){
+  const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+  const start = mondayOf(first);
+  const weeks = [];
+  for (let w = 0; w < 6; w++){
+    const d0 = addDays(start, w*7);
+    if (w >= 4 && d0.getMonth() !== cursor.getMonth() && addDays(d0,6).getMonth() !== cursor.getMonth()) break;
+    weeks.push(d0);
+  }
+
+  const g = el("div","grid");
+  const headWrap = el("div","grid head");
+  headWrap.appendChild(el("div"));
+  DOW.forEach(d => headWrap.appendChild(el("div", null, d)));
+  view.appendChild(headWrap);
+
+  const today = startOfDay(new Date());
+  for (const w0 of weeks){
+    const rail = el("div","rail");
+    rail.appendChild(el("span", null, parityName(parityOf(w0))));
+    g.appendChild(rail);
+    for (let i = 0; i < 7; i++){
+      const d = addDays(w0, i);
+      const off = dayOff(d);
+      const cell = el("div","cell"
+        + (d.getMonth() !== cursor.getMonth() ? " dim" : "")
+        + (off ? " off" : "")
+        + (sameDay(d,today) ? " today" : ""));
+      cell.appendChild(el("span","daynum", String(d.getDate())));
+      const lessons = lessonsOn(d);
+      if (off && !off.outside) cell.appendChild(el("div","offlabel", off.title));
+      for (const l of lessons) cell.appendChild(eventRow(l, d));
+      g.appendChild(cell);
+    }
+  }
+  view.appendChild(g);
+}
+
+function eventRow(l, date){
+  const b = el("button","ev");
+  b.style.setProperty("--evc", l.color);
+  b.appendChild(el("i"));
+  b.appendChild(el("span","nm", l.name));
+  b.appendChild(el("span","tm", l.t1));
+  b.addEventListener("click", () => openEvent(l, date));
+  return b;
+}
+
+const HOUR_PX = 64;   // высота одного часа на сетке; поменяешь тут — растянутся все занятия
+
+function timeToMinutes(t){
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(t||"").trim());
+  return m ? (+m[1])*60 + (+m[2]) : null;
+}
+
+/* Общий диапазон часов для всех недель сразу — считаем по всем занятиям в data,
+   а не по видимой неделе, чтобы сетка не «прыгала» при переключении недель. */
+function dayBounds(){
+  let min = Infinity, max = -Infinity;
+  const consider = (t1,t2) => {
+    const a = timeToMinutes(t1);
+    if (a == null) return;
+    min = Math.min(min, a);
+    const b = timeToMinutes(t2);
+    max = Math.max(max, b != null ? b : a + 40);
+  };
+  (data.lessons || []).forEach(l => consider(...timesOf(l)));
+  (data.overrides || []).forEach(o => { if (o.add) consider(...timesOf(o.add)); });
+  if (!isFinite(min)){ min = 8*60; max = 20*60; }
+  min = Math.floor(min/60)*60;
+  max = Math.ceil(max/60)*60;
+  if (max - min < 8*60) max = min + 8*60;
+  return { min, max };
+}
+
+/* Раскладка занятий одного дня по времени: у каждого — своя колонка,
+   если оно пересекается по времени с уже размещённым (обычно колонка одна). */
+function layoutDay(list){
+  const cols = [];
+  const placed = list.map(l => {
+    const s = timeToMinutes(l.t1);
+    const e = timeToMinutes(l.t2) || s + 40;
+    let ci = cols.findIndex(end => end <= s);
+    if (ci === -1){ ci = cols.length; cols.push(e); } else cols[ci] = e;
+    return { l, s, e, col: ci };
+  });
+  const total = cols.length || 1;
+  return placed.map(p => Object.assign(p, { total }));
+}
+
+function renderWeek(){
+  const mo = mondayOf(cursor);
+  const today = startOfDay(new Date());
+  const days = Array.from({length:7}, (_,i) => addDays(mo,i));
+  const { min, max } = dayBounds();
+  const pxPerMin = HOUR_PX / 60;
+  const totalH = (max - min) * pxPerMin;
+
+  const head = el("div","tgrid-head");
+  head.appendChild(el("div","tgrid-corner", parityName(parityOf(mo))));
+  days.forEach(d => {
+    const off = dayOff(d);
+    const c = el("div","tgrid-day" + (sameDay(d,today) ? " today" : ""));
+    c.appendChild(el("span","dname", d.getDate() + ", " + DOW[(d.getDay()+6)%7]));
+    if (off && !off.outside) c.appendChild(el("div","dayoff", off.title));
+    head.appendChild(c);
+  });
+  view.appendChild(head);
+
+  const body = el("div","tgrid-body");
+  body.style.height = totalH + "px";
+
+  const gutter = el("div","tgrid-gutter");
+  for (let m = min; m <= max; m += 60){
+    const lab = el("div","tgrid-hour", String(Math.floor(m/60)).padStart(2,"0") + ":00");
+    lab.style.top = ((m - min) * pxPerMin) + "px";
+    gutter.appendChild(lab);
+  }
+  body.appendChild(gutter);
+
+  days.forEach(d => {
+    const off = dayOff(d);
+    const col = el("div","tgrid-col" + (off ? " off" : "") + (sameDay(d,today) ? " today" : ""));
+    col.style.setProperty("--hour-px", HOUR_PX + "px");
+    col.style.height = totalH + "px";
+    layoutDay(lessonsOn(d)).forEach(({l,s,e,col:ci,total}) => {
+      const b = el("button","event");
+      b.style.setProperty("--evc", l.color);
+      b.style.top = Math.max(0, (s - min) * pxPerMin) + "px";
+      b.style.height = Math.max(18, (e - s) * pxPerMin - 2) + "px";
+      const gap = 4, w = `calc((100% - ${(total-1)*gap}px)/${total})`;
+      b.style.width = w;
+      b.style.left = `calc(${ci} * (${w} + ${gap}px))`;
+      b.appendChild(el("div","nm", l.name));
+      const meta = [l.t1 && l.t2 ? l.t1 + "–" + l.t2 : l.t1, l.room].filter(Boolean).join(" · ");
+      if (meta) b.appendChild(el("div","meta", meta));
+      b.addEventListener("click", () => openEvent(l, d));
+      col.appendChild(b);
+    });
+    body.appendChild(col);
+  });
+
+  if (sameDay(today, mo) || (today > mo && today < addDays(mo,7))){
+    const now = new Date();
+    const nowMin = now.getHours()*60 + now.getMinutes();
+    if (nowMin >= min && nowMin <= max){
+      const line = el("div","tgrid-now");
+      line.style.top = ((nowMin - min) * pxPerMin) + "px";
+      line.style.gridColumn = "2 / -1";
+      body.appendChild(line);
+    }
+  }
+
+  view.appendChild(body);
+}
+
+function renderAgenda(){
+  const today = startOfDay(new Date());
+  const from = mode === "month" ? new Date(cursor.getFullYear(), cursor.getMonth(), 1) : mondayOf(cursor);
+  const days = mode === "month"
+    ? new Date(cursor.getFullYear(), cursor.getMonth()+1, 0).getDate()
+    : 7;
+
+  const box = el("div","agenda");
+  let shown = 0;
+  for (let i = 0; i < days; i++){
+    const d = addDays(from, i);
+    const list = lessonsOn(d);
+    const off = dayOff(d);
+    const holiday = off && !off.outside ? off : null;
+    if (!list.length && !holiday) continue;
+    shown++;
+    const sec = el("div","aday" + (sameDay(d,today) ? " today" : ""));
+    const h = el("h3");
+    h.appendChild(document.createTextNode(d.getDate() + " " + MONTHS_GEN[d.getMonth()] + ", " + DOW_FULL[(d.getDay()+6)%7] + " "));
+    h.appendChild(el("em", null, "· " + parityName(parityOf(d)).toLowerCase()));
+    sec.appendChild(h);
+    if (holiday) sec.appendChild(el("p","empty", holiday.title));
+    for (const l of list){
+      const b = el("button","arow");
+      b.style.setProperty("--evc", l.color);
+      b.appendChild(el("span","t", l.t1));
+      b.appendChild(el("i"));
+      const bd = el("span","b");
+      bd.appendChild(el("div","nm", l.name));
+      const meta = [l.type, l.room, l.teacher].filter(Boolean).join(" · ");
+      if (meta) bd.appendChild(el("div","meta", meta));
+      b.appendChild(bd);
+      b.addEventListener("click", () => openEvent(l,d));
+      sec.appendChild(b);
+    }
+    box.appendChild(sec);
+  }
+  if (!shown) box.appendChild(el("p","empty","В этот период занятий нет."));
+  view.appendChild(box);
+}
+
+/* ====================== карточка занятия ====================== */
+function openEvent(l, date){
+  $("#evTitle").textContent = l.name;
+  const body = $("#evBody");
+  body.innerHTML = "";
+  const rows = [
+    ["Когда", date.getDate() + " " + MONTHS_GEN[date.getMonth()] + ", " + DOW_FULL[(date.getDay()+6)%7]],
+    ["Время", l.t1 && l.t2 ? l.t1 + " – " + l.t2 : (l.t1 || "—")],
+    ["Неделя", parityName(parityOf(date))],
+    ["Формат", l.type],
+    ["Место", l.room],
+    ["Преподаватель", l.teacher],
+    ["Заметка", l.note]
+  ].filter(r => r[1]);
+  for (const [k,v] of rows){
+    body.appendChild(el("dt", null, k));
+    body.appendChild(el("dd", null, v));
+  }
+  $("#dlgEvent").showModal();
+}
+
+/* ====================== хранение ======================
+   Источник истины — файл schedule.json рядом с index.html.
+   localStorage используется как офлайн-кэш: страница рисует
+   последнее известное расписание сразу, а потом тихо обновляет
+   его свежей версией с сервера.
+======================================================== */
+const LS_KEY = "raspisanie.v1";
+const SOURCE = "schedule.json";
+
+function loadLocal(){
+  try { const s = localStorage.getItem(LS_KEY); return s ? JSON.parse(s) : null; } catch(e){ return null; }
+}
+function saveLocal(d){
+  try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch(e){}
+}
+
+async function loadRemote(){
+  try {
+    const res = await fetch(SOURCE + "?v=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const v = await res.json();
+    if (v && (v.lessons || v.subjects)){
+      data = v; saveLocal(v); render();
+    }
+  } catch(e){
+    if (!data) {
+      view.innerHTML = '<p class="hint">Не получилось загрузить <b>' + SOURCE +
+        '</b>. Если открываешь файл двойным кликом — браузер запрещает такие запросы: ' +
+        'подними локальный сервер (<b>python -m http.server</b>) или выложи папку на хостинг. ' +
+        'Можно также вставить JSON вручную через кнопку «Данные».</p>';
+    }
+  }
+}
+
+function persist(d){
+  data = d; saveLocal(d); render();
+  return "сохранено на этом устройстве";
+}
+
+/* ====================== управление ====================== */
+$("#btnToday").addEventListener("click", () => { cursor = startOfDay(new Date()); render(); });
+$("#btnPrev").addEventListener("click", () => { step(-1); });
+$("#btnNext").addEventListener("click", () => { step(1); });
+function step(n){
+  cursor = mode === "month"
+    ? new Date(cursor.getFullYear(), cursor.getMonth()+n, 1)
+    : addDays(cursor, 7*n);
+  render();
+}
+$("#tabMonth").addEventListener("click", () => { mode = "month"; render(); });
+$("#tabWeek").addEventListener("click", () => { mode = "week"; render(); });
+document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", (e) => e.target.closest("dialog").close()));
+window.addEventListener("resize", debounce(render, 150));
+window.addEventListener("keydown", (e) => {
+  if (document.querySelector("dialog[open]")) return;
+  if (e.key === "ArrowLeft") step(-1);
+  if (e.key === "ArrowRight") step(1);
+});
+function debounce(fn, ms){ let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+$("#btnData").addEventListener("click", () => {
+  $("#jsonBox").value = JSON.stringify(data || SAMPLE, null, 2);
+  setStatus("Правки живут только в этом браузере. Чтобы их увидела группа — скачай файл и положи его в репозиторий вместо " + SOURCE + ".", false);
+  $("#dlgData").showModal();
+});
+$("#btnSample").addEventListener("click", () => { $("#jsonBox").value = JSON.stringify(SAMPLE, null, 2); });
+$("#fileIn").addEventListener("change", (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { $("#jsonBox").value = String(r.result); setStatus("Файл загружен — проверь и сохрани.", false); };
+  r.onerror = () => setStatus("Файл не читается.", true);
+  r.readAsText(f);
+});
+$("#btnDownload").addEventListener("click", () => {
+  let text = $("#jsonBox").value;
+  try { text = JSON.stringify(JSON.parse(text), null, 2); }
+  catch(err){ setStatus("JSON с ошибкой: " + err.message, true); return; }
+  const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = "schedule.json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+$("#btnReload").addEventListener("click", async () => {
+  setStatus("Загружаю " + SOURCE + "…", false);
+  await loadRemote();
+  $("#jsonBox").value = JSON.stringify(data || SAMPLE, null, 2);
+  setStatus("Взята версия с сервера.", false);
+});
+$("#btnSave").addEventListener("click", () => {
+  let parsed;
+  try { parsed = JSON.parse($("#jsonBox").value); }
+  catch(err){ setStatus("JSON с ошибкой: " + err.message, true); return; }
+  if (!parsed || (!Array.isArray(parsed.lessons) && !parsed.subjects)){
+    setStatus("Нужны поля subjects и lessons.", true); return;
+  }
+  const msg = persist(parsed);
+  setStatus("Расписание обновлено — " + msg + ".", false);
+  setTimeout(() => $("#dlgData").close(), 700);
+});
+function setStatus(t, bad){
+  const s = $("#dataStatus");
+  s.textContent = t;
+  s.classList.toggle("bad", !!bad);
+}
+
+/* ====================== старт ====================== */
+data = loadLocal();
+render();
+loadRemote();
+</script>
+</body>
+</html>
