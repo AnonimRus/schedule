@@ -3,57 +3,39 @@
   "semesterStart": "2026-09-01",
   "semesterEnd": "2026-12-27",
   "firstWeekParity": "odd",
-
   "holidays": [],
-
   "subjects": {
-      "eldyn_lect": { "name": "Электродинамика", "color": "#06b6d4" },
-      "eldyn_sem":  { "name": "Электродинамика", "color": "#facc15" },
-
-      "atom_lect":  { "name": "Атомная физика", "color": "#06b6d4" },
-      "atom_sem":   { "name": "Атомная физика", "color": "#facc15" },
-
-      "ai_lect":    { "name": "Введение в искусственный интеллект", "color": "#06b6d4" },
-      "ai_sem":     { "name": "Введение в искусственный интеллект", "color": "#facc15" },
-
-      "prog":       { "name": "Программирование на C++", "color": "#facc15" },
-
-      "lab":        { "name": "Лабораторный практикум по атомной физике", "color": "#a855f7" },
-
-      "nic":        { "name": "НИЦ", "color": "#64748b" },
-
-      "cult":       { "name": "Культурология", "color": "#06b6d4" },
-
-      "mattech":    { "name": "Основы материалов и технологии производства электронной техники", "color": "#06b6d4" },
-
-      "chem":       { "name": "Химия твёрдого тела", "color": "#06b6d4" },
-
-      "pe":         { "name": "Физра", "color": "#22c55e" }
+    "eldyn_lect": { "name": "Электродинамика", "color": "#06b6d4" },
+    "eldyn_sem":  { "name": "Электродинамика", "color": "#facc15" },
+    "atom_lect":  { "name": "Атомная физика", "color": "#06b6d4" },
+    "atom_sem":   { "name": "Атомная физика", "color": "#facc15" },
+    "ai_lect":    { "name": "Введение в искусственный интеллект", "color": "#06b6d4" },
+    "ai_sem":     { "name": "Введение в искусственный интеллект", "color": "#facc15" },
+    "prog":       { "name": "Программирование на C++", "color": "#facc15" },
+    "lab":        { "name": "Лабораторный практикум по атомной физике", "color": "#a855f7" },
+    "nic":        { "name": "НИЦ", "color": "#64748b" },
+    "cult":       { "name": "Культурология", "color": "#06b6d4" },
+    "mattech":    { "name": "Основы материалов и технологии производства электронной техники", "color": "#06b6d4" },
+    "chem":       { "name": "Химия твёрдого тела", "color": "#06b6d4" },
+    "pe":         { "name": "Физра", "color": "#22c55e" }
   },
-
   "lessons": [
     { "subject": "eldyn_sem", "weekday": 1, "slot": 2, "parity": "any", "room": "205-2", "teacher": "Гараев" },
-    { "subject": "atom_lect",  "weekday": 1, "slot": 3, "parity": "any", "room": "202-2", "teacher": "Ширяева" },
-    { "subject": "ai_lect",    "weekday": 1, "slot": 4, "parity": "any", "room": "203-2", "teacher": "Приоров" },
-
-    { "subject": "prog",  "weekday": 2, "slot": 1, "parity": "any", "room": "205-2", "teacher": "Трушин" },
+    { "subject": "atom_lect", "weekday": 1, "slot": 3, "parity": "any", "room": "202-2", "teacher": "Ширяева" },
+    { "subject": "ai_lect",   "weekday": 1, "slot": 4, "parity": "any", "room": "203-2", "teacher": "Приоров" },
+    { "subject": "prog",      "weekday": 2, "slot": 1, "parity": "any", "room": "205-2", "teacher": "Трушин" },
     { "subject": "ai_sem",    "weekday": 2, "slot": 2, "parity": "any", "room": "218-2", "teacher": "Ярков" },
-    { "subject": "prog",  "weekday": 2, "slot": 3, "parity": "any", "room": "114-2", "teacher": "Трушин" },
-
-    { "subject": "lab", "weekday": 3, "time": "11:05", "end": "13:35", "room": "108-1", "teacher": "Сергеев" },
-    { "subject": "nic", "weekday": 3, "time": "14:15", "end": "17:35", "room": "Третий этаж" },
-
-    { "subject": "cult", "weekday": 4, "slot": 1, "parity": "even", "room": "216-2", "teacher": "Мусин" },
-    { "subject": "atom_sem", "weekday": 4, "slot": 2, "parity": "odd",  "room": "113-2", "teacher": "Сергеев" },
-    { "subject": "mattech", "weekday": 4, "slot": 3, "parity": "any",  "room": "302-1", "teacher": "Зимин" },
-    { "subject": "chem", "weekday": 4, "slot": 4, "parity": "any",  "room": "108-1", "teacher": "Пухов" },
-
+    { "subject": "prog",      "weekday": 2, "slot": 3, "parity": "any", "room": "114-2", "teacher": "Трушин" },
+    { "subject": "lab",       "weekday": 3, "time": "11:05", "end": "13:35", "room": "108-1", "teacher": "Сергеев" },
+    { "subject": "nic",       "weekday": 3, "time": "14:15", "end": "17:35", "room": "Третий этаж" },
+    { "subject": "cult",      "weekday": 4, "slot": 1, "parity": "even", "room": "216-2", "teacher": "Мусин" },
+    { "subject": "atom_sem",  "weekday": 4, "slot": 2, "parity": "odd",  "room": "113-2", "teacher": "Сергеев" },
+    { "subject": "mattech",   "weekday": 4, "slot": 3, "parity": "any",  "room": "302-1", "teacher": "Зимин" },
+    { "subject": "chem",      "weekday": 4, "slot": 4, "parity": "any",  "room": "108-1", "teacher": "Пухов" },
     { "subject": "mattech",   "weekday": 5, "slot": 2, "parity": "any",  "room": "302-1", "teacher": "Зимин" },
-    { "subject": "eldyn_lect", "weekday": 5, "slot": 3, "parity": "any",  "room": "218-2", "teacher": "Смирнов" },
-    { "subject": "cult",  "weekday": 5, "slot": 4, "parity": "even", "room": "217-2", "teacher": "Мусин"},
-
-    { "subject": "pe", "weekday": 6, "slot": 5, "parity": "any", "room": "" }
+    { "subject": "eldyn_lect","weekday": 5, "slot": 3, "parity": "any",  "room": "218-2", "teacher": "Смирнов" },
+    { "subject": "cult",      "weekday": 5, "slot": 4, "parity": "even", "room": "217-2", "teacher": "Мусин" },
+    { "subject": "pe",        "weekday": 6, "slot": 5, "parity": "any",  "room": "" }
   ],
-
   "overrides": []
 }

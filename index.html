@@ -144,7 +144,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   position:absolute;left:0;right:0;height:0;border-top:2px solid #e0503f;z-index:6;pointer-events:none;
 }
 .tgrid-now::before{
-  content:"";position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:#e0503f;
+  content:"";position:absolute;left:-4px;top:-5px;width:8px;height:8px;border-radius:50%;background:#e0503f;
 }
 .event{
   position:absolute;text-align:left;border-left:3px solid var(--evc,var(--accent));
@@ -172,7 +172,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 }
 .day-timeline{
   display:grid;grid-template-columns:58px minmax(0,1fr);
-  position:relative;min-height:768px;
+  position:relative;
 }
 .day-gutter{position:relative;border-right:1px solid var(--rule)}
 .day-hour{
@@ -209,11 +209,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   border-top:2px solid #e0503f;z-index:8;pointer-events:none;
 }
 .day-now::before{
-  content:"";position:absolute;left:-4px;top:-5px;
+  content:"";position:absolute;left:-5px;top:-5px;
   width:8px;height:8px;border-radius:50%;background:#e0503f;
 }
 .day-now-label{
-  position:absolute;left:-58px;top:-11px;width:50px;
+  position:absolute;left:-58px;top:-8px;width:50px;
   text-align:right;font-size:11px;font-weight:600;color:#e0503f;
 }
 .day-empty{
@@ -223,7 +223,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 @media (max-width:760px){
   .day-head{padding:12px 14px}
   .day-head-title{font-size:16px}
-  .day-timeline{grid-template-columns:52px minmax(0,1fr);min-height:780px}
+  .day-timeline{grid-template-columns:52px minmax(0,1fr)}
   .day-hour{right:7px;font-size:10.5px}
   .day-event{padding:7px 8px}
   .day-event .nm{font-size:13px}
@@ -339,31 +339,8 @@ input[type=file]{font-size:13px}
 <script>
 "use strict";
 
-/* ====================== модель данных ======================
-{
-  "owner": "Руслан Рахимов",
-  "semesterStart": "2026-09-01",      // начало семестра (и якорь чётности)
-  "semesterEnd": "2026-12-27",        // конец семестра; вне этих границ пар нет
-  "firstWeekParity": "even",          // чётность первой недели: "even" | "odd"
-  "holidays": [                       // выходные: дата, {date,title} или {from,to,title}
-    "2026-11-04",
-    { "from": "2026-10-26", "to": "2026-11-01", "title": "Каникулы" }
-  ],
-  "subjects": { "phys": {"name":"Физика","color":"#3b82f6"} },
-  "lessons": [
-    { "subject":"phys", "weekday":1, "slot":2, "parity":"any",
-      "type":"Лекция", "room":"Ауд. 285", "teacher":"Иванов И.И." }
-  ],
-  "overrides": [
-    { "date":"2026-09-16", "cancel":true, "subject":"phys" },
-    { "date":"2026-09-16", "add":{ "subject":"phys","slot":4,"room":"Ауд. 101" } }
-  ]
-}
-weekday: 1=Пн … 7=Вс. slot: номер пары 1..N по массиву SLOTS (или "time":"09:50" + "end":"11:20" для нестандартного времени).
-============================================================ */
-
 const SLOTS = [
-  ["08:30","10:05"],["10:15","11:50"],["12:00","13:35"],["14:15","15:50"], ["11:20", "13:00"]
+  ["08:30","10:05"],["10:15","11:50"],["12:00","13:35"],["14:15","15:50"],["16:00","17:35"]
 ];
 const DOW = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
 const DOW_FULL = ["понедельник","вторник","среда","четверг","пятница","суббота","воскресенье"];
@@ -413,9 +390,8 @@ const SAMPLE = {
 
 /* ====================== состояние ====================== */
 let data = null;
-let mode = window.innerWidth < 760 ? "day" : "month"; // "day" | "week" | "month"
+let mode = window.innerWidth < 760 ? "day" : "month";
 let cursor = startOfDay(new Date());
-
 
 const $ = (s) => document.querySelector(s);
 const view = $("#view");
@@ -468,7 +444,6 @@ function holidayOn(date){
   return null;
 }
 
-/* Нерабочий день: либо вне семестра, либо праздник/каникулы. */
 function dayOff(date){
   if (!data) return null;
   if (!inTerm(date)) return { title: "Вне семестра", outside: true };
@@ -496,8 +471,6 @@ function lessonsOn(date){
   const key = iso(date);
   const ovs = (data.overrides || []).filter(o => o.date === key);
 
-  // В выходной и за границами семестра регулярные пары не идут.
-  // Разовые занятия из overrides.add всё равно применяются — отработки бывают и в субботу.
   let list = dayOff(date) ? [] : (data.lessons || []).filter(l =>
     (l.weekday|0) === wd &&
     (!l.parity || l.parity === "any" || l.parity === par) &&
@@ -620,15 +593,13 @@ function eventRow(l, date){
   return b;
 }
 
-const HOUR_PX = 64;   // высота одного часа на сетке; поменяешь тут — растянутся все занятия
+const HOUR_PX = 64;
 
 function timeToMinutes(t){
   const m = /^(\d{1,2}):(\d{2})$/.exec(String(t||"").trim());
   return m ? (+m[1])*60 + (+m[2]) : null;
 }
 
-/* Общий диапазон часов для всех недель сразу — считаем по всем занятиям в data,
-   а не по видимой неделе, чтобы сетка не «прыгала» при переключении недель. */
 function dayBounds(){
   let min = Infinity, max = -Infinity;
   const consider = (t1,t2) => {
@@ -647,8 +618,6 @@ function dayBounds(){
   return { min, max };
 }
 
-/* Раскладка занятий одного дня по времени: у каждого — своя колонка,
-   если оно пересекается по времени с уже размещённым (обычно колонка одна). */
 function layoutDay(list){
   const cols = [];
   const placed = list.map(l => {
@@ -662,22 +631,26 @@ function layoutDay(list){
   return placed.map(p => Object.assign(p, { total }));
 }
 
-
 function dayTimelineBounds(date){
   const list = lessonsOn(date);
-  let min = 8 * 60, max = 20 * 60;
+  let min = 8 * 60, max = 18 * 60;
 
   if (list.length){
     const starts = list.map(l => timeToMinutes(l.t1)).filter(v => v != null);
     const ends = list.map(l => timeToMinutes(l.t2)).filter(v => v != null);
-    if (starts.length) min = Math.min(min, Math.floor(Math.min(...starts) / 60) * 60);
-    if (ends.length) max = Math.max(max, Math.ceil(Math.max(...ends) / 60) * 60);
+    if (starts.length) min = Math.min(min, Math.min(...starts));
+    if (ends.length) max = Math.max(max, Math.max(...ends));
   }
 
-  // Немного воздуха сверху/снизу, но не превращаем телефонный экран в бесконечную простыню.
-  min = Math.max(6 * 60, min - 30);
+  // Округляем строго до целых часов вниз и вверх
+  min = Math.floor(min / 60) * 60;
+  max = Math.ceil(max / 60) * 60;
+
+  // Добавляем по 1 целому часу запаса сверху и снизу
+  min = Math.max(6 * 60, min - 60);
   max = Math.min(23 * 60, max + 60);
-  return {min, max};
+
+  return { min, max };
 }
 
 function renderDay(){
@@ -706,13 +679,14 @@ function renderDay(){
   const gutter = el("div","day-gutter");
   for (let m = min; m <= max; m += 60){
     const lab = el("div","day-hour", String(Math.floor(m/60)).padStart(2,"0") + ":00");
-    lab.style.top = ((m-min)*pxPerMin) + "px";
+    lab.style.top = ((m - min) * pxPerMin) + "px";
     gutter.appendChild(lab);
   }
   body.appendChild(gutter);
 
   const track = el("div","day-track" + (off ? " off" : ""));
   track.style.setProperty("--day-hour-px", HOUR_PX + "px");
+  track.style.height = totalH + "px";
 
   if (!list.length){
     track.appendChild(el("div","day-empty", off ? off.title : "В этот день занятий нет."));
@@ -721,8 +695,8 @@ function renderDay(){
   layoutDay(list).forEach(({l,s,e,col:ci,total}) => {
     const b = el("button","day-event");
     b.style.setProperty("--evc", l.color);
-    b.style.top = Math.max(0, (s-min)*pxPerMin) + "px";
-    b.style.height = Math.max(46, (e-s)*pxPerMin - 3) + "px";
+    b.style.top = Math.round((s - min) * pxPerMin) + "px";
+    b.style.height = Math.max(36, Math.round((e - s) * pxPerMin) - 2) + "px";
 
     const gap = 6;
     b.style.width = `calc(${100/total}% - ${(total-1)*gap/total}px)`;
@@ -741,7 +715,7 @@ function renderDay(){
     const nowMin = now.getHours()*60 + now.getMinutes() + now.getSeconds()/60;
     if (nowMin >= min && nowMin <= max){
       const line = el("div","day-now");
-      line.style.top = ((nowMin-min)*pxPerMin) + "px";
+      line.style.top = Math.round((nowMin - min) * pxPerMin) + "px";
       line.appendChild(el("span","day-now-label",
         String(now.getHours()).padStart(2,"0") + ":" + String(now.getMinutes()).padStart(2,"0")));
       track.appendChild(line);
@@ -880,12 +854,7 @@ function openEvent(l, date){
   $("#dlgEvent").showModal();
 }
 
-/* ====================== хранение ======================
-   Источник истины — файл schedule.json рядом с index.html.
-   localStorage используется как офлайн-кэш: страница рисует
-   последнее известное расписание сразу, а потом тихо обновляет
-   его свежей версией с сервера.
-======================================================== */
+/* ====================== хранение ====================== */
 const LS_KEY = "raspisanie.v1";
 const SOURCE = "schedule.json";
 
