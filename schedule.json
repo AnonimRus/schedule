@@ -35,7 +35,7 @@
     { "subject": "mattech",   "weekday": 5, "slot": 2, "parity": "any",  "room": "302-1", "teacher": "Зимин" },
     { "subject": "eldyn_lect","weekday": 5, "slot": 3, "parity": "any",  "room": "218-2", "teacher": "Смирнов" },
     { "subject": "cult",      "weekday": 5, "slot": 4, "parity": "even", "room": "217-2", "teacher": "Мусин" },
-    { "subject": "pe",        "weekday": 6, "slot": 5, "parity": "any",  "room": "" }
+    { "subject": "pe",        "weekday": 6, "time": "11:20", "end": "12:30", "parity": "any",  "room": "" }
   ],
   "overrides": []
 }
