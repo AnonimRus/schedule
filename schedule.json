@@ -3,7 +3,7 @@
   "semesterStart": "2026-09-01",
   "semesterEnd": "2026-12-27",
   "firstWeekParity": "odd",
-  "holidays": [],
+  "holidays": ["2026-11-04"],
   "subjects": {
     "eldyn_lect": { "name": "Электродинамика", "color": "#06b6d4" },
     "eldyn_sem":  { "name": "Электродинамика", "color": "#facc15" },
@@ -28,7 +28,7 @@
     { "subject": "prog",      "weekday": 2, "time": "12:40", "end": "14:15", "parity": "any", "room": "НИЦ, 3 этаж", "teacher": "Трушин" },
     { "subject": "lab",       "weekday": 3, "time": "11:05", "end": "13:35", "room": "108-1", "teacher": "Сергеев" },
     { "subject": "nic",       "weekday": 2, "time": "14:15", "end": "17:35", "room": "Третий этаж" },
-    { "subject": "cult",      "weekday": 4, "slot": 1, "parity": "even", "room": "216-2", "teacher": "Мусин" },
+    { "subject": "cult", "weekday": 4, "slot": 1, "parity": "even", "to": "2026-10-15", "room": "216-2", "teacher": "Мусин" },,
     { "subject": "atom_sem",  "weekday": 4, "slot": 2, "parity": "odd",  "room": "113-2", "teacher": "Сергеев" },
     { "subject": "mattech",   "weekday": 4, "slot": 3, "parity": "any",  "room": "302-1", "teacher": "Зимин" },
     { "subject": "chem",      "weekday": 4, "slot": 4, "parity": "any",  "room": "108-1", "teacher": "Пухов" },
